@@ -85,21 +85,6 @@ const config: Config = {
           label: 'Learning',
         },
         {
-          to: '/docs/module-2/intro',
-          label: 'Module 2',
-          position: 'left',
-        },
-        {
-          to: '/docs/module-3/intro',
-          label: 'Module 3',
-          position: 'left',
-        },
-        {
-          to: '/docs/module-4/intro',
-          label: 'Module 4',
-          position: 'left',
-        },
-        {
           type: 'localeDropdown',
           position: 'right',
         },
@@ -107,6 +92,11 @@ const config: Config = {
           href: 'https://github.com/hassanjhr/hackathon_book_q4_p1',
           label: 'GitHub',
           position: 'right',
+        },
+        {
+          type: 'custom-userIcon',
+          position: 'right',
+          authUrl: '/auth',
         },
       ],
     },
