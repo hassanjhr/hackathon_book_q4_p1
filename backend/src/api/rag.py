@@ -4,8 +4,11 @@ RAG chatbot API endpoints.
 from fastapi import APIRouter, HTTPException, status
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
+import os
 
 from src.services.rag_service import rag_service
+from src.services.qdrant_client import qdrant_service
+from src.config import settings
 from src.utils.logger import get_logger
 
 logger = get_logger("rag_api")
@@ -188,3 +191,113 @@ async def test_endpoint(question: str = "What is Physical AI?"):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Test failed: {str(e)}"
         )
+
+
+@router.get("/rag/debug", status_code=status.HTTP_200_OK)
+async def debug_qdrant():
+    """
+    Debug endpoint to diagnose Qdrant connection issues.
+
+    Returns detailed diagnostic information including:
+    - Environment variable values
+    - Settings loaded by pydantic
+    - Qdrant service status
+    - Connection test results
+
+    Use this to troubleshoot deployment issues.
+    """
+    try:
+        # Get raw environment variables
+        qdrant_url_env = os.getenv("QDRANT_URL", "")
+        qdrant_api_key_env = os.getenv("QDRANT_API_KEY", "")
+
+        diagnostics = {
+            "environment_variables": {
+                "QDRANT_URL": qdrant_url_env if qdrant_url_env else "NOT SET",
+                "QDRANT_URL_LENGTH": len(qdrant_url_env) if qdrant_url_env else 0,
+                "QDRANT_API_KEY": "SET (" + str(len(qdrant_api_key_env)) + " chars)" if qdrant_api_key_env else "NOT SET",
+                "QDRANT_COLLECTION_NAME": os.getenv("QDRANT_COLLECTION_NAME", "NOT SET")
+            },
+            "settings_loaded_by_pydantic": {
+                "qdrant_url": settings.qdrant_url if settings.qdrant_url else "NOT SET",
+                "qdrant_url_length": len(settings.qdrant_url) if settings.qdrant_url else 0,
+                "has_api_key": bool(settings.qdrant_api_key),
+                "api_key_length": len(settings.qdrant_api_key) if settings.qdrant_api_key else 0,
+                "collection_name": settings.qdrant_collection_name
+            },
+            "qdrant_service_status": {
+                "is_available": qdrant_service.is_available,
+                "client_configured": qdrant_service.client is not None,
+                "collection_name": qdrant_service.collection_name
+            }
+        }
+
+        # Try to connect and get collections
+        if qdrant_service.is_available:
+            try:
+                from qdrant_client import QdrantClient
+
+                # Test with current configuration
+                test_client = QdrantClient(
+                    url=settings.qdrant_url,
+                    api_key=settings.qdrant_api_key,
+                    prefer_grpc=False,
+                    https=True,
+                    timeout=10
+                )
+
+                collections = test_client.get_collections()
+                diagnostics["qdrant_connection_test"] = {
+                    "status": "SUCCESS",
+                    "collections": [c.name for c in collections.collections],
+                    "collection_count": len(collections.collections),
+                    "target_collection_exists": any(c.name == settings.qdrant_collection_name for c in collections.collections)
+                }
+            except Exception as e:
+                diagnostics["qdrant_connection_test"] = {
+                    "status": "FAILED",
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                }
+        else:
+            diagnostics["qdrant_connection_test"] = {
+                "status": "SKIPPED",
+                "reason": "Qdrant service marked as unavailable during initialization"
+            }
+
+        # Add recommendations based on diagnostics
+        recommendations = []
+
+        if not qdrant_url_env:
+            recommendations.append("❌ QDRANT_URL environment variable is not set")
+        elif qdrant_url_env != settings.qdrant_url:
+            recommendations.append(f"⚠️  Environment variable QDRANT_URL='{qdrant_url_env}' doesn't match settings.qdrant_url='{settings.qdrant_url}'")
+
+        if not qdrant_api_key_env:
+            recommendations.append("❌ QDRANT_API_KEY environment variable is not set")
+
+        if not qdrant_service.is_available:
+            recommendations.append("❌ Qdrant service failed to initialize - check connection parameters")
+
+        if diagnostics.get("qdrant_connection_test", {}).get("status") == "FAILED":
+            error_msg = diagnostics["qdrant_connection_test"].get("error", "")
+            if "Name or service not known" in error_msg:
+                recommendations.append(f"🔥 DNS resolution failed for '{settings.qdrant_url}' - verify URL format")
+                recommendations.append("Try: Remove https:// prefix if present, ensure port :6333 is included")
+            elif "timeout" in error_msg.lower():
+                recommendations.append("⏱️  Connection timeout - check firewall/network restrictions")
+
+        if recommendations:
+            diagnostics["recommendations"] = recommendations
+        else:
+            diagnostics["recommendations"] = ["✅ All checks passed!"]
+
+        return diagnostics
+
+    except Exception as e:
+        logger.error(f"Error in debug endpoint: {e}")
+        return {
+            "error": str(e),
+            "error_type": type(e).__name__,
+            "recommendations": ["Failed to generate diagnostics - check server logs"]
+        }
