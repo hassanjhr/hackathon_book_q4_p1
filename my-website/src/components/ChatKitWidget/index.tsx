@@ -49,7 +49,7 @@ export default function ChatKitWidget({ apiUrl, userId = 'anonymous' }: ChatKitW
   // API base URL (from props, window config, or default)
   const API_BASE_URL = apiUrl ||
     (typeof window !== 'undefined' && (window as any).DOCUSAURUS_API_URL) ||
-    'http://localhost:8000';
+    'https://hassanjhr-rag-chatbot.hf.space';
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
