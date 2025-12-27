@@ -115,13 +115,25 @@ class QdrantService:
                     ]
                 )
 
-            results = self.client.search(
-                collection_name=self.collection_name,
-                query_vector=query_vector,
-                limit=limit,
-                score_threshold=score_threshold,
-                query_filter=query_filter
-            )
+            # Try new API first (qdrant-client >= 1.8), fallback to old API
+            try:
+                # New API (>= 1.8.0)
+                results = self.client.query_points(
+                    collection_name=self.collection_name,
+                    query=query_vector,
+                    limit=limit,
+                    score_threshold=score_threshold,
+                    query_filter=query_filter
+                ).points
+            except AttributeError:
+                # Old API (<= 1.7.0)
+                results = self.client.search(
+                    collection_name=self.collection_name,
+                    query_vector=query_vector,
+                    limit=limit,
+                    score_threshold=score_threshold,
+                    query_filter=query_filter
+                )
 
             return [
                 {
