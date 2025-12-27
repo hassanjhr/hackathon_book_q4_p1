@@ -44,8 +44,12 @@ async def health_check():
 # Import and include routers
 from src.api.ingestion import router as ingestion_router
 from src.api.query import router as query_router
+from src.api.rag import router as rag_router
+from src.api.chatkit_routes import router as chatkit_router
 app.include_router(ingestion_router, prefix="/api", tags=["Ingestion"])
 app.include_router(query_router, prefix="/api", tags=["Query"])
+app.include_router(rag_router, prefix="/api", tags=["RAG Chatbot"])
+app.include_router(chatkit_router, prefix="/api", tags=["ChatKit"])
 
 # Startup event to initialize database connections
 @app.on_event("startup")

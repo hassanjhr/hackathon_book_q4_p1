@@ -3,7 +3,14 @@ Qdrant vector database client for storing and searching embeddings.
 """
 from typing import List, Dict, Any, Optional
 from qdrant_client import QdrantClient
-from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+from qdrant_client.models import (
+    Distance,
+    VectorParams,
+    PointStruct,
+    Filter,
+    FieldCondition,
+    MatchValue,
+)
 from src.config import settings
 from src.utils.logger import get_logger
 
@@ -15,12 +22,27 @@ class QdrantService:
 
     def __init__(self):
         """Initialize Qdrant client and create collection if needed."""
+
+        # 🔥 IMPORTANT FIX: force REST, disable gRPC, enable HTTPS for Qdrant Cloud
         self.client = QdrantClient(
             url=settings.qdrant_url,
-            api_key=settings.qdrant_api_key
+            api_key=settings.qdrant_api_key,
+            prefer_grpc=False,   # Use REST API instead of gRPC
+            https=True,          # Enable HTTPS for Qdrant Cloud
+            timeout=30
         )
+
         self.collection_name = settings.qdrant_collection_name
-        self._ensure_collection_exists()
+        self.is_available = False  # Track if Qdrant is accessible
+
+        # Try to ensure collection exists, but don't fail if Qdrant is unavailable
+        try:
+            self._ensure_collection_exists()
+            self.is_available = True
+            logger.info("✅ Qdrant connection successful")
+        except Exception as e:
+            logger.warning(f"⚠️ Qdrant unavailable (continuing without vector search): {str(e)[:100]}")
+            logger.warning("The backend will start, but vector search features will be disabled")
 
     def _ensure_collection_exists(self):
         """Create collection if it doesn't exist."""
@@ -40,6 +62,7 @@ class QdrantService:
                 logger.info(f"Collection {self.collection_name} created successfully")
             else:
                 logger.info(f"Collection {self.collection_name} already exists")
+
         except Exception as e:
             logger.error(f"Error ensuring collection exists: {e}")
             raise
@@ -50,17 +73,6 @@ class QdrantService:
         vectors: List[List[float]],
         payloads: List[Dict[str, Any]]
     ) -> bool:
-        """
-        Insert vectors with metadata into Qdrant.
-
-        Args:
-            chunk_ids: List of chunk IDs
-            vectors: List of embedding vectors
-            payloads: List of metadata dictionaries
-
-        Returns:
-            True if successful, False otherwise
-        """
         try:
             points = [
                 PointStruct(
@@ -77,6 +89,7 @@ class QdrantService:
             )
             logger.info(f"Inserted {len(points)} vectors into Qdrant")
             return True
+
         except Exception as e:
             logger.error(f"Error inserting vectors: {e}")
             return False
@@ -88,21 +101,9 @@ class QdrantService:
         score_threshold: Optional[float] = None,
         chunk_ids_filter: Optional[List[str]] = None
     ) -> List[Dict[str, Any]]:
-        """
-        Search for similar vectors in Qdrant.
-
-        Args:
-            query_vector: Query embedding vector
-            limit: Maximum number of results to return
-            score_threshold: Minimum similarity score threshold
-            chunk_ids_filter: Optional list of chunk IDs to filter search
-
-        Returns:
-            List of search results with chunk_id, score, and payload
-        """
         try:
-            # Build filter if chunk_ids are provided
             query_filter = None
+
             if chunk_ids_filter:
                 query_filter = Filter(
                     must=[
@@ -130,20 +131,12 @@ class QdrantService:
                 }
                 for result in results
             ]
+
         except Exception as e:
             logger.error(f"Error searching vectors: {e}")
             return []
 
     def delete_vectors(self, chunk_ids: List[str]) -> bool:
-        """
-        Delete vectors by chunk IDs.
-
-        Args:
-            chunk_ids: List of chunk IDs to delete
-
-        Returns:
-            True if successful, False otherwise
-        """
         try:
             self.client.delete(
                 collection_name=self.collection_name,
@@ -151,6 +144,7 @@ class QdrantService:
             )
             logger.info(f"Deleted {len(chunk_ids)} vectors from Qdrant")
             return True
+
         except Exception as e:
             logger.error(f"Error deleting vectors: {e}")
             return False
