@@ -1,0 +1,150 @@
+/* Modal overlay */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Modal content */
+.modalContent {
+  background: var(--ifm-background-color);
+  border-radius: 12px;
+  max-width: 500px;
+  width: 90%;
+  padding: 0;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  position: relative;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Close button */
+.closeButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--ifm-font-color-base);
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  padding: 4px;
+  line-height: 1;
+  z-index: 1;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+/* Modal body */
+.modalBody {
+  padding: 40px 32px 32px;
+  text-align: center;
+}
+
+/* Icon */
+.icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+}
+
+/* Urdu title */
+.urduTitle {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 12px;
+  color: var(--ifm-color-primary);
+  direction: rtl;
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif;
+}
+
+/* Urdu text */
+.urduText {
+  font-size: 16px;
+  line-height: 1.8;
+  margin-bottom: 24px;
+  color: var(--ifm-font-color-base);
+  direction: rtl;
+  font-family: 'Jameel Noori Nastaleeq', 'Noto Nastaliq Urdu', serif;
+}
+
+/* English section */
+.englishSection {
+  background: var(--ifm-color-emphasis-100);
+  padding: 20px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.englishSection h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--ifm-color-primary);
+}
+
+.englishSection p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+  color: var(--ifm-font-color-base);
+}
+
+/* OK button */
+.okButton {
+  background: var(--ifm-color-primary);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.okButton:hover {
+  background: var(--ifm-color-primary-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Dark mode adjustments */
+[data-theme='dark'] .modalContent {
+  background: var(--ifm-background-color);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+
+[data-theme='dark'] .closeButton {
+  color: var(--ifm-font-color-base);
+}
