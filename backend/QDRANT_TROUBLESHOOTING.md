@@ -109,7 +109,7 @@ In Hugging Face Spaces → Settings → Environment Variables, add:
 
 ```
 QDRANT_URL=bbcdb8f8-bcf5-4129-acab-f133bbf378ce.europe-west3-0.gcp.cloud.qdrant.io:6333
-QDRANT_API_KEY=QDRANT_API_KEY=your-qdrant-api-key
+QDRANT_API_KEY=your-qdrant-api-key
 QDRANT_COLLECTION_NAME=textbook_content
 OPENAI_API_KEY=your-openai-key
 ```
