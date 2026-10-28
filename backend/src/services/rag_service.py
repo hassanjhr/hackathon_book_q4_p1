@@ -260,7 +260,7 @@ Answer (based only on the context above):"""
 
     async def _detect_library_intent(self, question: str) -> Dict[str, Any]:
         """
-        Detect if question involves a library using GPT-3.5-turbo.
+        Detect if question involves a library using the configured chat model.
 
         Args:
             question: User's question
@@ -291,7 +291,7 @@ Respond in JSON:
 Use "code" mode for API/implementation questions, "info" mode for concepts."""
 
             response = self.openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model=self.chat_model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.0,
                 max_tokens=100,
